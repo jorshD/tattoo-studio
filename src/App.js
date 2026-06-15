@@ -205,7 +205,7 @@ export default function App() {
     setSaving(true);
     try {
       const row = await db.insert("citas", {
-        nombre: data.nombre, telefono: data.telefono, fecha: data.fecha,
+        nombre: data.nombre, telefono: data.telefono, fecha: data.fecha, hora: data.hora || null,
         diseño: data.diseño, parte_del_cuerpo: data.parteDelCuerpo,
         medidas: data.medidas, precio: data.precio || null, abono: data.abono || null,
         notas: data.notas, status: "pending",
@@ -268,7 +268,7 @@ export default function App() {
       await db.update("asesorias", convertLead.id, { status: "client" });
       setAsesorias(prev => prev.map(a => a.id === convertLead.id ? { ...a, status: "client" } : a));
       const row = await db.insert("citas", {
-        nombre: citaData.nombre, telefono: citaData.telefono, fecha: citaData.fecha,
+        nombre: citaData.nombre, telefono: citaData.telefono, fecha: citaData.fecha, hora: citaData.hora || null,
         diseño: citaData.diseño, parte_del_cuerpo: citaData.parteDelCuerpo,
         medidas: citaData.medidas, precio: citaData.precio || null, abono: citaData.abono || null,
         notas: citaData.notas, status: "pending",
@@ -294,7 +294,7 @@ export default function App() {
   ];
 
   // ── Normaliza campos snake_case → camelCase para UI ──────────────
-  const normCita = (c) => ({ ...c, parteDelCuerpo: c.parte_del_cuerpo, diseño: c.diseño });
+  const normCita = (c) => ({ ...c, parteDelCuerpo: c.parte_del_cuerpo, diseño: c.diseño, hora: c.hora });
 
   if (loading) return (
     <>
@@ -311,7 +311,7 @@ export default function App() {
       <style>{css}</style>
       <div className="app">
         <aside className="sidebar">
-          <div className="sidebar-logo">🖋 INK<span>Tattoo Studio</span></div>
+          <div className="sidebar-logo">🖋 AGENDA<span>Tattoo Studio</span></div>
           <nav className="nav">
             {nav.map(n => (
               <button key={n.id} className={`nav-btn ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>
@@ -407,6 +407,8 @@ function CitasPage({ citas, onAdd, onComplete, onDelete, onView, onWA, saving })
               <div className="record-name">{c.nombre}</div>
               <div className="record-meta">
                 <span>📅 {fmtDate(c.fecha)}</span>
+                {c.hora && <span>🕐 {c.hora}</span>}
+                {c.hora && <span>🕐 {c.hora}</span>}
                 {c.diseño && <span>🎨 {c.diseño}</span>}
                 {c.parteDelCuerpo && <span>📍 {c.parteDelCuerpo}</span>}
                 {c.telefono && <span>📱 {c.telefono}</span>}
@@ -499,6 +501,8 @@ function ClientesPage({ clientes, onWA, onWAMasivo }) {
               <div className="record-name">{c.nombre}</div>
               <div className="record-meta">
                 <span>📅 {fmtDate(c.fecha)}</span>
+                {c.hora && <span>🕐 {c.hora}</span>}
+                {c.hora && <span>🕐 {c.hora}</span>}
                 {c.diseño && <span>🎨 {c.diseño}</span>}
                 {c.parteDelCuerpo && <span>📍 {c.parteDelCuerpo}</span>}
                 {c.telefono && <span>📱 {c.telefono}</span>}
@@ -561,7 +565,7 @@ function WhatsAppModal({ modal, onClose }) {
     const esCita = it?.fecha && (it?.parte_del_cuerpo || it?.parteDelCuerpo);
     if (esCita) {
       const saldo = (Number(it.precio||0) - Number(it.abono||0));
-      return `Hola ${nombre} 👋, te confirmamos tu cita en el estudio:\n\n📅 *Fecha:* ${fmtDate(it.fecha)}\n🎨 *Diseño:* ${it.diseño || "-"}\n📍 *Parte del cuerpo:* ${it.parte_del_cuerpo || it.parteDelCuerpo || "-"}\n📐 *Tamaño:* ${it.medidas || "-"}\n💵 *Precio:* ${fmt(it.precio)}\n✅ *Abono:* ${fmt(it.abono)}\n💳 *Saldo pendiente:* ${fmt(saldo)}\n\n📋 *Políticas de cancelación:*\n• Cancela con mínimo 48 horas de anticipación para reagendar sin costo.\n• El abono no es reembolsable en caso de no presentarse.\n• Llega puntual a tu cita 🙏\n\n¡Nos vemos pronto! 🖋`;
+      return `Hola ${nombre} 👋, te confirmamos tu cita en el estudio:\n\n📅 *Fecha:* ${fmtDate(it.fecha)}${it.hora ? '\n🕐 *Hora:* ' + it.hora : ''}\n🎨 *Diseño:* ${it.diseño || "-"}\n📍 *Parte del cuerpo:* ${it.parte_del_cuerpo || it.parteDelCuerpo || "-"}\n📐 *Tamaño:* ${it.medidas || "-"}\n💵 *Precio:* ${fmt(it.precio)}\n✅ *Abono:* ${fmt(it.abono)}\n💳 *Saldo pendiente:* ${fmt(saldo)}\n\n📋 *Políticas de cancelación:*\n• Cancela con mínimo 48 horas de anticipación para reagendar sin costo.\n• El abono no es reembolsable en caso de no presentarse.\n• Llega puntual a tu cita 🙏\n\n¡Nos vemos pronto! 🖋`;
     }
     return `Hola ${nombre} 👋, te escribo del estudio de tatuajes. ¿Cómo estás?`;
   };
@@ -614,7 +618,7 @@ function WhatsAppModal({ modal, onClose }) {
 
 // ── Modal: Nueva Cita ─────────────────────────────────────────────
 function CitaModal({ onClose, onSave, saving }) {
-  const [form, setForm] = useState({ nombre:"", telefono:"", fecha:"", diseño:"", parteDelCuerpo:"", medidas:"", precio:"", abono:"", notas:"" });
+  const [form, setForm] = useState({ nombre:"", telefono:"", fecha:"", hora:"", diseño:"", parteDelCuerpo:"", medidas:"", precio:"", abono:"", notas:"" });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const handleSave = () => {
     if (!form.nombre.trim()) return alert("El nombre es obligatorio");
@@ -633,6 +637,7 @@ function CitaModal({ onClose, onSave, saving }) {
             <div className="form-group"><label>Nombre *</label><input value={form.nombre} onChange={e=>set("nombre",e.target.value)} placeholder="Ej. María García" /></div>
             <div className="form-group"><label>Teléfono / WhatsApp</label><input type="tel" value={form.telefono} onChange={e=>set("telefono",e.target.value)} placeholder="Ej. 3001234567" /></div>
             <div className="form-group"><label>Fecha *</label><input type="date" value={form.fecha} onChange={e=>set("fecha",e.target.value)} /></div>
+            <div className="form-group"><label>Hora</label><input type="time" value={form.hora} onChange={e=>set("hora",e.target.value)} /></div>
             <div className="form-group"><label>Diseño / Estilo</label><input value={form.diseño} onChange={e=>set("diseño",e.target.value)} placeholder="Ej. Mandala, Flores" /></div>
             <div className="form-group"><label>Parte del cuerpo</label><input value={form.parteDelCuerpo} onChange={e=>set("parteDelCuerpo",e.target.value)} placeholder="Ej. Antebrazo" /></div>
             <div className="form-group"><label>Medidas (cm)</label><input value={form.medidas} onChange={e=>set("medidas",e.target.value)} placeholder="Ej. 10x15" /></div>
@@ -689,7 +694,7 @@ function AsesoriaModal({ onClose, onSave, saving }) {
 function ConvertirACitaModal({ asesoria, onClose, onSave, saving }) {
   const [form, setForm] = useState({
     nombre: asesoria.nombre || "", telefono: asesoria.telefono || "",
-    fecha: "", diseño: asesoria.diseño || "", parteDelCuerpo: "",
+    fecha: "", hora: "", diseño: asesoria.diseño || "", parteDelCuerpo: "",
     medidas: "", precio: "", abono: "", notas: asesoria.notas || "",
   });
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -715,6 +720,7 @@ function ConvertirACitaModal({ asesoria, onClose, onSave, saving }) {
             <div className="form-group"><label>Teléfono</label><input type="tel" value={form.telefono} onChange={e=>set("telefono",e.target.value)} /></div>
             <div className="section-label">📅 Datos de la cita</div>
             <div className="form-group"><label>Fecha *</label><input type="date" value={form.fecha} onChange={e=>set("fecha",e.target.value)} /></div>
+            <div className="form-group"><label>Hora</label><input type="time" value={form.hora} onChange={e=>set("hora",e.target.value)} /></div>
             <div className="form-group"><label>Diseño</label><input value={form.diseño} onChange={e=>set("diseño",e.target.value)} /></div>
             <div className="form-group"><label>Parte del cuerpo</label><input value={form.parteDelCuerpo} onChange={e=>set("parteDelCuerpo",e.target.value)} placeholder="Ej. Antebrazo" /></div>
             <div className="form-group"><label>Medidas (cm)</label><input value={form.medidas} onChange={e=>set("medidas",e.target.value)} placeholder="Ej. 10x15" /></div>
@@ -761,6 +767,8 @@ function DetailModal({ item, onClose }) {
               </div>
             )}
             {isCita ? <>
+              {d.hora && <div className="detail-item"><div className="detail-label">Hora</div><div className="detail-value">{d.hora}</div></div>}
+              {d.hora && <div className="detail-item"><div className="detail-label">Hora</div><div className="detail-value">{d.hora}</div></div>}
               <div className="detail-item"><div className="detail-label">Diseño</div><div className="detail-value">{d.diseño||"-"}</div></div>
               <div className="detail-item"><div className="detail-label">Parte del cuerpo</div><div className="detail-value">{d.parteDelCuerpo||"-"}</div></div>
               <div className="detail-item"><div className="detail-label">Medidas</div><div className="detail-value">{d.medidas||"-"}</div></div>
