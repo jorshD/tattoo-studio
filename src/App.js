@@ -555,11 +555,18 @@ function WhatsAppModal({ modal, onClose }) {
   const isIndividual = modal.type === "individual";
   const item = modal.item;
   const lista = modal.lista || [];
-  const [msg, setMsg] = useState(
-    isIndividual
-      ? `Hola ${item?.nombre?.split(" ")[0]} 👋, te escribo del estudio de tatuajes.`
-      : "Hola 👋, te escribo del estudio de tatuajes."
-  );
+
+  const buildMsg = (it) => {
+    const nombre = it?.nombre?.split(" ")[0] || "";
+    const esCita = it?.fecha && (it?.parte_del_cuerpo || it?.parteDelCuerpo);
+    if (esCita) {
+      const saldo = (Number(it.precio||0) - Number(it.abono||0));
+      return `Hola ${nombre} 👋, te confirmamos tu cita en el estudio:\n\n📅 *Fecha:* ${fmtDate(it.fecha)}\n🎨 *Diseño:* ${it.diseño || "-"}\n📍 *Parte del cuerpo:* ${it.parte_del_cuerpo || it.parteDelCuerpo || "-"}\n📐 *Tamaño:* ${it.medidas || "-"}\n💵 *Precio:* ${fmt(it.precio)}\n✅ *Abono:* ${fmt(it.abono)}\n💳 *Saldo pendiente:* ${fmt(saldo)}\n\n📋 *Políticas de cancelación:*\n• Cancela con mínimo 48 horas de anticipación para reagendar sin costo.\n• El abono no es reembolsable en caso de no presentarse.\n• Llega puntual a tu cita 🙏\n\n¡Nos vemos pronto! 🖋`;
+    }
+    return `Hola ${nombre} 👋, te escribo del estudio de tatuajes. ¿Cómo estás?`;
+  };
+
+  const [msg, setMsg] = useState(() => buildMsg(item));
 
   const openWA = (nombre, phone) => {
     const texto = isIndividual ? msg : msg.replace("{nombre}", nombre.split(" ")[0]);
